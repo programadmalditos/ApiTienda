@@ -20,7 +20,8 @@ namespace ApiTienda.Controllers{
 
         public IEnumerable<Producto> Get()
         {
-            return context.Producto.ToList();
+            return new List<Producto>();
+           // return context.Producto.ToList();
         }
 
         // GET api/values/5
