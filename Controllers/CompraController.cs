@@ -57,6 +57,7 @@ namespace ApiTienda.Controllers{
             try
             {
                 context.SaveChanges();
+                value.Tienda=null;
                 return Created("", value);
             }
             catch (Exception e)
