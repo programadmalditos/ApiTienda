@@ -9,10 +9,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using ApiTienda.Options;
+
 namespace ApiTienda
 {
     public class Startup
     {
+        private const string SecretKey="ClaveParaGenerarLosTokens";
+         private readonly SymmetricSecurityKey _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecretKey));
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
@@ -30,7 +38,22 @@ namespace ApiTienda
         {
             var conexion=Configuration.GetConnectionString("DefaultConnection");
             // Add framework services.
-            services.AddMvc();
+            services.AddMvc(c =>
+            {
+                var policy = new AuthorizationPolicyBuilder()
+                     .RequireAuthenticatedUser()
+                     .Build();
+                c.Filters.Add(new AuthorizeFilter(policy));
+
+            });
+                        services.AddAuthorization();
+                        var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
+                         services.Configure<JwtIssuerOptions>(options =>
+            {
+                options.Issuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
+                options.Audience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)];
+                options.SigningCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
+            });
              services.AddCors();
             services.AddDbContext<ListaCompraConext>(options=>options.UseSqlServer(conexion));
         }
@@ -43,6 +66,31 @@ namespace ApiTienda
             loggerFactory.AddDebug();
             app.UseCors(builder =>
             builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod());
+ var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)],
+
+                ValidateAudience = true,
+                ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = _signingKey,
+
+                RequireExpirationTime = true,
+                ValidateLifetime = true,
+
+                ClockSkew = TimeSpan.Zero
+            };
+
+            app.UseJwtBearerAuthentication(new JwtBearerOptions
+            {
+                AutomaticAuthenticate = true,
+                AutomaticChallenge = true,
+                TokenValidationParameters = tokenValidationParameters
+            });
+
 
             app.UseMvc();
             DbInitializer.Initialize(context);

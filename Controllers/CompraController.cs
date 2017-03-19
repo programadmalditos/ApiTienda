@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ApiTienda.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApiTienda.Controllers{
 
      [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
+      [Authorize()]
     public class CompraController : Controller
     {
 
