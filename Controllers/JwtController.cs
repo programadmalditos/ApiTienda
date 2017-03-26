@@ -50,13 +50,13 @@ namespace ApiTienda.Controllers{
                   ClaimValueTypes.Integer64),
         
       };
-
+      _jwtOptions.UpdateToken();
       // Create the JWT security token and encode it.
       var jwt = new JwtSecurityToken(
           issuer: _jwtOptions.Issuer,
           audience: _jwtOptions.Audience,
           claims: claims,
-          notBefore: _jwtOptions.NotBefore,
+          notBefore: DateTime.UtcNow,
           expires: _jwtOptions.Expiration,
           signingCredentials: _jwtOptions.SigningCredentials);
 
